@@ -10,11 +10,11 @@ const pool = new Pool({
 export const crearUsuario = (body) => {
   return new Promise(function(resolve, reject) {
     const { name, email } = body
-    pool.query('INSERT INTO Usuario (name, email, etc) VALUES ($1, $2) RETURNING *', [name, email], (error, results) => {
+    const nuevoUsuario = pool.query('INSERT INTO Usuario (name, email, etc) VALUES ($1, $2) RETURNING *', [name, email], (error, results) => {
       if (error) {
         reject(error)
       }
-      resolve(`A new user has been added: ${results.rows[0]}`)
+    resolve(nuevoUsuario.rows[0])
     })
   })
 }
