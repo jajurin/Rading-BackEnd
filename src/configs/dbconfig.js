@@ -1,9 +1,12 @@
 const config = {
-    host :"localhost",
-    database: "nombreDb",
-    user: "postgres",
-    password: "root",
-    port : 5432
-
+    host: "db.xozgebntbqatsurzcjfr.supabase.co", 
+    database: "postgres",                        
+    user: "postgres",                            
+    password: "Radingjhlc1234",
+    port: 5432,                                  
+    ssl: {                                       
+        rejectUnauthorized: false
+    }
 }
-export default config
+
+export default config;

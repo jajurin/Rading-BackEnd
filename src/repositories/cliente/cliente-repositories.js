@@ -27,7 +27,7 @@ async function buscarTrabajador(texto, ids = []) {
     return result.rows
 }
 
-async function filtrar(estrellas, especialidad, distancia, horario) {
+async function filtrarTr(estrellas, especialidad, distancia, horario) {
     const client = new Client(config)
     await client.connect()
 
@@ -47,4 +47,26 @@ async function filtrar(estrellas, especialidad, distancia, horario) {
     return result.rows
 }
 
-export { buscarTrabajador, filtrar }
+
+
+
+async function mostrarTrabajosActivos(idCliente) {
+    const client = new Client(config)
+    await client.connect()
+
+    let sql = `SELECT Trabajador.nombre, Trabajador.apellido, Trabajador-Cliente.precio, Trabajador-Cliente.necesidad, Trabajador-Cliente.fecha_iniciado, Trabajador-Cliente.estado
+        FROM Cliente
+        INNER JOIN Trabajador-Cliente 
+        ON Trabajador-Cliente.id_cliente = Cliente.id
+        INNER JOIN Trabajador 
+        ON Trabajador-Cliente.id_trabajador = Trabajador.id
+        WHERE Cliente.id = $1
+        AND Trabajador-Cliente.estado IN ('EN PROCESO')`                   
+
+    const result = await client.query(sql, [idCliente])
+    await client.end()
+
+    return result.rows
+}
+
+export { buscarTrabajador, filtrarTr, mostrarTrabajosActivos}

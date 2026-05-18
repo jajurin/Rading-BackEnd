@@ -1,10 +1,11 @@
 import express from "express";
-import buscarTrabajador from "./repositories/cliente/cliente-repositories.js";
+import trabajadorRoutes from "./routes/trabajador-routes.js";
+import clienteRoutes from "./routes/cliente-routes.js";
 
 const app = express();
+app.use(express.json()); 
 
-app.get('/buscar-trabajador', async (req, res) => {
-    const texto = req.query.texto
-    const trabajadores = await buscarTrabajador(texto)
-    res.json(trabajadores)
-})
+app.use("/trabajador", trabajadorRoutes);
+app.use("/cliente", clienteRoutes);
+
+export default app;
