@@ -1,17 +1,37 @@
-import clienteRepository from "../repositories/cliente/cliente-repositories.js"
+import clienteRepository from "../repositories/cliente/cliente-repositories.js";
+
+const repo = new clienteRepository();
 
 export default class ClienteServices {
-    buscarConFiltrosTr = async (texto, estrellas, especialidad, distancia, horario) => {
-        const trabajadoresFiltrados = await clienteRepository.filtrarTr(estrellas, especialidad, distancia, horario)
-        const ids = trabajadoresFiltrados.map(t => t.id)
-        const resultado = await clienteRepository.buscarTrabajador(texto, ids)
 
-        return resultado
+    registrarCliente = async (cliente) => {
+        return await repo.registrarCliente(cliente);
+    }
+
+    buscarConFiltrosCl = async (
+        texto,
+        estrellas,
+        especialidad,
+        distancia,
+        horario
+    ) => {
+
+        const trabajadoresFiltrados = await repo.filtrarTr(
+            estrellas,
+            especialidad,
+            distancia,
+            horario
+        );
+
+        const ids = trabajadoresFiltrados.map(t => t.id);
+
+        return await repo.buscarTrabajador(texto, ids);
     }
 
     mostrarTrabajosActivos = async (idCliente) => {
-        const trabajosActivos = await clienteRepository.mostrarTrabajosActivos(idCliente)
-
-        return trabajosActivos
+        return await repo.mostrarTrabajosActivos(idCliente);
     }
+    mostrarTodosLosClientes = async () => {
+    return await repo.mostrarTodosLosClientes()
+}
 }

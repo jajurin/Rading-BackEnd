@@ -10,4 +10,5 @@ app.use(express.json());
 app.use("/trabajador", trabajadorRoutes);
 app.use("/cliente", clienteRoutes);
 
+
 export default app;

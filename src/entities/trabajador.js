@@ -9,8 +9,8 @@ class Trabajador extends Usuario {
     foto;
     estrellas;
 
-  constructor(nombre, apellido, email, contrasena, nroTelefono, fechaNac, dni, cuentaBancaria, categoria, descripcion, zonaTrabajo, DispComienzo, DispFinal, foto) {
-    super(nombre, apellido, email, contrasena, nroTelefono, fechaNac, dni, cuentaBancaria)
+  constructor(nombre, apellido, email, direccion, contrasena, telefono, fechaNac, dni, cuentaBancaria, categoria, descripcion, zonaTrabajo, DispComienzo, DispFinal, foto) {
+    super(nombre, apellido, email, direccion, contrasena, telefono, fechaNac, dni, cuentaBancaria)
     this.categoria = categoria;
     this.descripcion = descripcion;
     this.zonaTrabajo = zonaTrabajo;

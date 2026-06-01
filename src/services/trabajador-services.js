@@ -1,17 +1,39 @@
-import trabajadorRepository from '../repositories/trabajador-repository.js'
+import trabajadorRepository from "../repositories/trabajador/trabajador-repositories.js";
+
+const repo = new trabajadorRepository();
 
 export default class TrabajadorServices {
-    buscarConFiltrosCl = async (texto, estrellas, necesidad, distancia, horario, precio, ubicacion, tipo) => {
-        const clientesFiltrados = await trabajadorRepository.filtrarCl(estrellas, necesidad, distancia, horario, precio, ubicacion, tipo)
-        const ids = clientesFiltrados.map(t => t.id)
-        const resultado = await trabajadorRepository.buscarCliente(texto, ids)
 
-        return resultado
+    registrarTrabajador = async (trabajador) => {
+        return await repo.registrarTrabajador(trabajador);
+    }
+
+    buscarConFiltrosTr = async (
+        texto,
+        estrellas,
+        necesidad,
+        distancia,
+        horario,
+        precio,
+        ubicacion,
+        tipo
+    ) => {
+        const clientesFiltrados = await repo.filtrarCl(
+            estrellas,
+            necesidad,
+            distancia,
+            horario,
+            precio,
+            ubicacion,
+            tipo
+        );
+
+        const ids = clientesFiltrados.map(t => t.id);
+
+        return await repo.buscarCliente(texto, ids);
     }
 
     mostrarTrabajosRealizados = async (idTrabajador) => {
-        const trabajosRealizados = await trabajadorRepository.mostrarTrabajosRealizados(idTrabajador)
-
-        return trabajosRealizados
+        return await repo.mostrarTrabajosRealizados(idTrabajador);
     }
 }

@@ -3,21 +3,22 @@ class Usuario {
   nombre;
   apellido;
   email;
+  direccion;
   contrasena;
-  nroTelefono;
+  telefono;
   fechaNac;
   dni;
-  cuentaBancaria;
 
-  constructor(nombre, apellido, email, contrasena, nroTelefono, fechaNac, dni, cuentaBancaria) {
+
+  constructor(nombre, apellido, email, direccion, contrasena, telefono, fechaNac, dni) {
     this.nombre = nombre;
     this.apellido = apellido;
     this.email = email;
+    this.direccion = direccion;
     this.contrasena = contrasena;
-    this.nroTelefono = nroTelefono;
+    this.telefono = telefono;
     this.fechaNac = fechaNac;
     this.dni = dni;
-    this.cuentaBancaria = cuentaBancaria
   }
 }
 
