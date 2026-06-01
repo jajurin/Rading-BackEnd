@@ -1,4 +1,6 @@
-class Trabajador {
+import Usuario from './usuario.js';
+
+class Trabajador extends Usuario {
     categoria;
     descripcion;
     zonaTrabajo;

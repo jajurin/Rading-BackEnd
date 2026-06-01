@@ -1,7 +1,7 @@
-import express from "express";
-import { buscarConFiltrosTr } from "../repositories/cliente/cliente-repositories.js";
-
-const router = express.Router();
+import { Router } from "express";
+import TrabajadorServices from "../repositories/trabajador/trabajador-repositories.js";
+const router = Router();
+const svc = new TrabajadorServices();
 
 router.get("/", async (req, res) => {
     res.send("Ruta de trabajadores");
@@ -17,8 +17,15 @@ router.get("/buscarCliente", async (req, res) => {
     const ubicacion = req.query.ubicacion;
     const tipo = req.query.tipo;
 
-    const trabajadores = await buscarConFiltrosTr(texto, estrellas, necesidad, distancia, horario, precio, ubicacion, tipo);
-    res.json(trabajadores);
+    const trabajadores = await svc.buscarConFiltrosTr(texto, estrellas, necesidad, distancia, horario, precio, ubicacion, tipo);
+    res.status(200).json(trabajadores);
+});
+
+router.get("/trabajosRealizados", async (req, res) => {
+    const idTrabajador = req.query.id;
+
+    const trabajosRealizados = await svc.mostrarTrabajosRealizados(idTrabajador);
+    res.status(200).json(trabajosRealizados);
 });
 
 export default router;

@@ -1,7 +1,7 @@
-import express from "express";
-import { buscarConFiltrosCl } from "../repositories/trabajador/trabajador-repository.js";
-
-const router = express.Router();
+import { Router } from "express";
+import ClienteServices from "../repositories/trabajador/trabajador-repository.js";
+const router = Router();
+const svc = new ClienteServices();
 
 router.get("/", async (req, res) => {
     res.send("Ruta de clientes");
@@ -14,8 +14,15 @@ router.get("/buscarTrabajador", async (req, res) => {
     const distancia = req.query.distancia;
     const horario = req.query.horario;
 
-    const cliente = await buscarConFiltrosCl(texto, estrellas, especialidad, distancia, horario);
-    res.json(cliente);
+    const cliente = await svc.buscarConFiltrosCl(texto, estrellas, especialidad, distancia, horario);
+    res.status(200).json(cliente);
+});
+
+router.get("/trabajosActivos", async (req, res) => {
+    const idCliente = req.query.id;
+
+    const trabajosActivos = await svc.mostrarTrabajosActivos(idCliente);
+    res.status(200).json(trabajosActivos);
 });
 
 export default router;

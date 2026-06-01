@@ -1,18 +1,17 @@
-import { filtrarTr, buscarTrabajador } from '../repositories/trabajador-repository.js'
+import clienteRepository from "../repositories/cliente/cliente-repositories.js"
 
-async function buscarConFiltrosTr(texto, estrellas, especialidad, distancia, horario) {
-    const trabajadoresFiltrados = await filtrarTr(estrellas, especialidad, distancia, horario)
-    const ids = trabajadoresFiltrados.map(t => t.id)
-    const resultado = await buscarTrabajador(texto, ids)
+export default class ClienteServices {
+    buscarConFiltrosTr = async (texto, estrellas, especialidad, distancia, horario) => {
+        const trabajadoresFiltrados = await clienteRepository.filtrarTr(estrellas, especialidad, distancia, horario)
+        const ids = trabajadoresFiltrados.map(t => t.id)
+        const resultado = await clienteRepository.buscarTrabajador(texto, ids)
 
-    return resultado
+        return resultado
+    }
+
+    mostrarTrabajosActivos = async (idCliente) => {
+        const trabajosActivos = await clienteRepository.mostrarTrabajosActivos(idCliente)
+
+        return trabajosActivos
+    }
 }
-
-async function mostrarTrAct(idCliente){
-    const trabajosRealizados = await mostrarTrabajosActivos(idCliente)
-
-    return trabajosRealizados
-}
-
-
-export { buscarConFiltrosTr, mostrarTrAct }

@@ -2,18 +2,21 @@ import config from '../../configs/dbconfig'
 import pkg from 'pg'
 const { Client } = pkg
 
-async function registrarse() {
-    const client = new Client(config)
-    await client.connect()
+export default class usuarioRepository {
+    registrarse = async () =>  {
+        const client = new Client(config)
+        try {
+            await client.connect()
 
-    let sql = 'INSERT INTO Usuario (nombre, apellido, dni, email, contraseña, telefono, fechaNac) VALUES ($1, $2, $3, $4, $5, $6, $7)'
+            const sql = 'INSERT INTO Usuario (nombre, apellido, dni, email, contraseña, telefono, fechaNac) VALUES ($1, $2, $3, $4, $5, $6, $7)'
 
-    const values = [nombre, apellido, dni, email, contraseña, telefono, fechaNac]
-    const result = await client.query(sql, values)
-    await client.end()
+            const values = [nombre, apellido, dni, email, contraseña, telefono, fechaNac]
+            const result = await client.query(sql, values)
+            await client.end()
 
-    console.log(result.rows[0])
+            console.log(result.rows[0])
+        } catch (err) {
+            console.error(err)
+        }
+    }
 }
-
-export default registrarse
-
