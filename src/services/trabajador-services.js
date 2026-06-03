@@ -4,9 +4,9 @@ const repo = new trabajadorRepository();
 
 export default class TrabajadorServices {
 
-    registrarTrabajador = async (trabajador) => {
-        return await repo.registrarTrabajador(trabajador);
-    }
+   registrarTrabajador = async (trabajador) => {
+    return await repo.registrarTrabajador(trabajador);
+}
 
     buscarConFiltrosTr = async (
         texto,

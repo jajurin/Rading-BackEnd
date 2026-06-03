@@ -122,22 +122,22 @@ export default class trabajadorRepository {
         try {
             await client.connect()
 
-            const sqlUsuario = `
-                INSERT INTO Usuario
-                (
-                    nombre,
-                    apellido,
-                    email,
-                    direccion,
-                    contrasena,
-                    telefono,
-                    fechaNac,
-                    dni,
-                    cuentaBancaria
-                )
-                VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
-                RETURNING id
-            `
+           const sqlUsuario = `
+    INSERT INTO "Usuario"
+    (
+        nombre,
+        apellido,
+        email,
+        direccion,
+        contrasena,
+        telefono,
+        "fechaNac",
+        "dni",
+        "cuentaBancaria"
+    )
+    VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
+    RETURNING *
+`
 
             const resultUsuario = await client.query(
                 sqlUsuario,
@@ -156,21 +156,20 @@ export default class trabajadorRepository {
 
             const idUsuario = resultUsuario.rows[0].id
 
-            const sqlTrabajador = `
-                INSERT INTO Trabajador
-                (
-                    idPersona,
-                    categoria,
-                    descripcion,
-                    zonaTrabajo,
-                    DispComienzo,
-                    DispFinal,
-                    foto,
-                    estrellas
-                )
-                VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
-            `
-
+           const sqlTrabajador = `
+    INSERT INTO "Trabajador"
+    (
+        "idPersona",
+        categoria,
+        descripcion,
+        "zonaTrabajo",
+        "DispComienzo",
+        "DispFinal",
+        foto,
+        estrellas
+    )
+    VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
+`
             await client.query(
                 sqlTrabajador,
                 [
