@@ -210,4 +210,35 @@ export default class trabajadorRepository {
             await client.end()
         }
     }
+
+    mostrarTodosLosTrabajadores = async () => {
+        const client = new Client(config)
+        let result
+
+        try {
+            await client.connect()
+
+            const sql = `
+                SELECT
+                    t.id,
+                    u.nombre,
+                    u.apellido,
+                    u.email,
+                    u.direccion,
+                    u.telefono
+                FROM "Trabajador" t
+                INNER JOIN "Usuario" u ON t."IdPersona" = u.id
+            `
+
+            result = await client.query(sql)
+
+        } catch (err) {
+            console.error('Error en mostrarTodosLosClientes:', err)
+            throw err
+        } finally {
+            await client.end()
+        }
+
+        return result?.rows ?? []
+    }
 }

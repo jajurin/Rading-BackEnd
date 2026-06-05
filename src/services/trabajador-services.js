@@ -4,7 +4,11 @@ import Trabajador from '../entities/trabajador.js'
  
 export default class TrabajadorServices {
     #repo
- 
+    
+    mostrarTodosLosTrabajadores = async () => {
+        return await this.#repo.mostrarTodosLosTrabajadores()
+    }
+
     constructor() {
         this.#repo = new trabajadorRepository()
     }

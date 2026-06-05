@@ -4,6 +4,16 @@ import TrabajadorServices from "../services/trabajador-services.js"
 const router = Router()
 const svc = new TrabajadorServices()
 
+router.get("/todos", async (req, res) => {
+    try {
+        const trabajadores = await svc.mostrarTodosLosTrabajadores()
+        res.status(200).json(trabajadores)
+    } catch (error) {
+        console.error(error)
+        res.status(500).json({ message: "Error al obtener trabajadores", error })
+    }
+})
+
 // POST /trabajador/registrar
 // Body: { nombre, apellido, email, direccion, contrasena, telefono, fechaNac, dni, IdCuentaBancaria?,
 //         categoria, descripcion, zonaTrabajo, DispComienzo, DispFinal, foto? }

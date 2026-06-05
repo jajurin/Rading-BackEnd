@@ -64,23 +64,46 @@ export default class clienteRepository {
      */
     filtrarTr = async (estrellas, categoria, distancia, horario) => {
         const client = new Client(config)
-        let result
 
         try {
             await client.connect()
 
-            const sql = `
-                SELECT t.id
-                FROM "Cliente-Trabajador" ct
-                INNER JOIN "Trabajador" t ON ct."IdTrabajador" = t.id
-                WHERE t.estrellas >= $1
-                AND t.categoria = $2
-                AND ct.distancia <= $3
-                AND ct.horario = $4
+            let sql = `
+              SELECT DISTINCT t.id
+                FROM "Trabajador" t
+                LEFT JOIN "Cliente-Trabajador" ct ON ct."IdTrabajador" = t.id
+                WHERE 1=1
             `
 
-            const values = [estrellas, categoria, distancia, horario]
-            result = await client.query(sql, values)
+            const values = []
+            let i = 1
+
+            if (estrellas !== undefined && estrellas !== null) {
+                sql += ` AND t.estrellas >= $${i}`
+                values.push(Number(estrellas))
+                i++
+            }
+
+            if (categoria) {
+                sql += ` AND t.categoria = $${i}`
+                values.push(categoria)
+                i++
+            }
+
+            if (distancia !== undefined && distancia !== null) {
+                sql += ` AND ct.distancia <= $${i}`
+                values.push(Number(distancia))
+                i++
+            }
+
+            if (horario) {
+                sql += ` AND ct.horario = $${i}`
+                values.push(horario)
+                i++
+            }
+
+            const result = await client.query(sql, values)
+            return result?.rows ?? []
 
         } catch (err) {
             console.error('Error en filtrarTr:', err)
@@ -88,10 +111,7 @@ export default class clienteRepository {
         } finally {
             await client.end()
         }
-
-        return result?.rows ?? []
     }
-
     /**
      * Muestra los trabajos activos (EN PROCESO) de un cliente.
      */
