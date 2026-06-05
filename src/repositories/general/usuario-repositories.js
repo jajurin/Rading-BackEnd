@@ -3,20 +3,70 @@ import pkg from 'pg'
 const { Client } = pkg
 
 export default class usuarioRepository {
-    registrarse = async (nombre, apellido, dni, email, direccion, contraseña, telefono, fechaNac) =>  {
+
+    /**
+     * Inserta en la tabla Usuario y devuelve el id generado.
+     * Se usa internamente desde clienteRepository y trabajadorRepository.
+     */
+    registrarUsuario = async (usuario) => {
         const client = new Client(config)
         try {
             await client.connect()
 
-            const sql = 'INSERT INTO Usuario (nombre, apellido, dni, email, direccion, contrasena, telefono, fechaNac) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)'
+            const sql = `
+                INSERT INTO "Usuario"
+                (
+                    nombre,
+                    apellido,
+                    email,
+                    direccion,
+                    contrasena,
+                    telefono,
+                    "fechaNac",
+                    "DNI",
+                    "IdCuentaBancaria"
+                )
+                VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
+                RETURNING id
+            `
 
-            const values = [nombre, apellido, dni, email, direccion, contraseña, telefono, fechaNac]
+            const values = [
+                usuario.nombre,
+                usuario.apellido,
+                usuario.email,
+                usuario.direccion,
+                usuario.contrasena,
+                usuario.telefono,
+                usuario.fechaNac,
+                usuario.dni,
+                usuario.IdCuentaBancaria ?? null
+            ]
+
             const result = await client.query(sql, values)
-            await client.end()
+            return result.rows[0].id
 
-            console.log(result.rows[0])
         } catch (err) {
-            console.error(err)
+            console.error('Error en registrarUsuario:', err)
+            throw err
+        } finally {
+            await client.end()
+        }
+    }
+
+    buscarPorEmail = async (email) => {
+        const client = new Client(config)
+        try {
+            await client.connect()
+
+            const sql = `SELECT * FROM "Usuario" WHERE email = $1 LIMIT 1`
+            const result = await client.query(sql, [email])
+            return result.rows[0] ?? null
+
+        } catch (err) {
+            console.error('Error en buscarPorEmail:', err)
+            throw err
+        } finally {
+            await client.end()
         }
     }
 }

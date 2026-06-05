@@ -3,39 +3,42 @@ import TrabajadorServices from "../services/trabajador-services.js"
 
 const router = Router()
 const svc = new TrabajadorServices()
-router.get("/", async (req, res) => {
-    res.send("Ruta de trabajadores");
-});
+
+// POST /trabajador/registrar
+// Body: { nombre, apellido, email, direccion, contrasena, telefono, fechaNac, dni, IdCuentaBancaria?,
+//         categoria, descripcion, zonaTrabajo, DispComienzo, DispFinal, foto? }
 router.post("/registrar", async (req, res) => {
     try {
-        await svc.registrarTrabajador(req.body);
-        res.status(201).json({ message: "Trabajador registrado correctamente" });
+        const result = await svc.registrarTrabajador(req.body)
+        res.status(201).json({ message: "Trabajador registrado correctamente", ...result })
     } catch (error) {
-        console.log(error);
-        res.status(500).json(error);
+        console.error(error)
+        res.status(500).json({ message: "Error al registrar trabajador", error })
     }
-});
+})
+
+// GET /trabajador/buscarCliente?texto=&estrellas=&categoria=&distancia=&horario=&fijo=
 router.get("/buscarCliente", async (req, res) => {
-    const {
-        texto,
-        estrellas,
-        necesidad,
-        distancia,
-        horario,
-        precio,
-        ubicacion,
-        tipo
-    } = req.query
+    try {
+        const { texto, estrellas, categoria, distancia, horario, fijo } = req.query
+        const resultado = await svc.buscarConFiltrosTr(texto, estrellas, categoria, distancia, horario, fijo)
+        res.status(200).json(resultado)
+    } catch (error) {
+        console.error(error)
+        res.status(500).json({ message: "Error al buscar clientes", error })
+    }
+})
 
-    const trabajadores = await svc.buscarConFiltrosTr(texto, estrellas, necesidad, distancia, horario, precio, ubicacion, tipo);
-    res.status(200).json(trabajadores);
-});
-
+// GET /trabajador/trabajosRealizados/:id
 router.get("/trabajosRealizados/:id", async (req, res) => {
-    const idTrabajador = req.params.id;
+    try {
+        const idTrabajador = req.params.id
+        const trabajosRealizados = await svc.mostrarTrabajosRealizados(idTrabajador)
+        res.status(200).json(trabajosRealizados)
+    } catch (error) {
+        console.error(error)
+        res.status(500).json({ message: "Error al obtener trabajos realizados", error })
+    }
+})
 
-    const trabajosRealizados = await svc.mostrarTrabajosRealizados(idTrabajador);
-    res.status(200).json(trabajosRealizados);
-});
-
-export default router;
+export default router

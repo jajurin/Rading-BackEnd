@@ -4,6 +4,10 @@ const { Client } = pkg
 
 export default class clienteRepository {
 
+    /**
+     * Busca trabajadores por nombre/apellido (texto libre).
+     * Si se pasan ids, filtra solo entre esos ids (usado tras aplicar filtros).
+     */
     buscarTrabajador = async (texto, ids = []) => {
         const client = new Client(config)
         let result
@@ -11,24 +15,42 @@ export default class clienteRepository {
         try {
             await client.connect()
 
+            // Trabajador hereda de Usuario mediante IdPersona
             let sql = `
-                SELECT *
-                FROM Trabajador
+                SELECT
+                    t.id,
+                    u.nombre,
+                    u.apellido,
+                    u.email,
+                    u.direccion,
+                    u.telefono,
+                    t.categoria,
+                    t.descripcion,
+                    t."zonaTrabajo",
+                    t."DispComienzo",
+                    t."DispFinal",
+                    t.foto,
+                    t.estrellas
+                FROM "Trabajador" t
+                INNER JOIN "Usuario" u ON t."IdPersona" = u.id
                 WHERE (
-                    nombre ILIKE $1
-                    OR apellido ILIKE $1
-                )`
-            
+                    u.nombre ILIKE $1
+                    OR u.apellido ILIKE $1
+                )
+            `
+
             const values = [`%${texto}%`]
 
             if (ids.length > 0) {
-                sql += ` AND id = ANY($2)`
+                sql += ` AND t.id = ANY($2)`
                 values.push(ids)
             }
 
             result = await client.query(sql, values)
+
         } catch (err) {
-            console.error(err)
+            console.error('Error en buscarTrabajador:', err)
+            throw err
         } finally {
             await client.end()
         }
@@ -36,26 +58,33 @@ export default class clienteRepository {
         return result?.rows ?? []
     }
 
-    filtrarTr = async (estrellas, especialidad, distancia, horario) => {
+    /**
+     * Filtra trabajadores por criterios y devuelve sus ids.
+     * La tabla de unión se llama "Cliente-Trabajador" en el diagrama.
+     */
+    filtrarTr = async (estrellas, categoria, distancia, horario) => {
         const client = new Client(config)
         let result
 
         try {
             await client.connect()
 
-            let sql = `SELECT Trabajador.id
-                FROM "Trabajador-Cliente"
-                INNER JOIN Trabajador 
-                ON "Trabajador-Cliente".id_trabajador = Trabajador.id
-                WHERE Trabajador.estrellas >= $1
-                AND Trabajador.especialidad = $2
-                AND "Trabajador-Cliente".distancia <= $3
-                AND Trabajador.horario = $4`
+            const sql = `
+                SELECT t.id
+                FROM "Cliente-Trabajador" ct
+                INNER JOIN "Trabajador" t ON ct."IdTrabajador" = t.id
+                WHERE t.estrellas >= $1
+                AND t.categoria = $2
+                AND ct.distancia <= $3
+                AND ct.horario = $4
+            `
 
-            const values = [estrellas, especialidad, distancia, horario]
+            const values = [estrellas, categoria, distancia, horario]
             result = await client.query(sql, values)
+
         } catch (err) {
-            console.error(err)
+            console.error('Error en filtrarTr:', err)
+            throw err
         } finally {
             await client.end()
         }
@@ -63,6 +92,9 @@ export default class clienteRepository {
         return result?.rows ?? []
     }
 
+    /**
+     * Muestra los trabajos activos (EN PROCESO) de un cliente.
+     */
     mostrarTrabajosActivos = async (idCliente) => {
         const client = new Client(config)
         let result
@@ -70,50 +102,63 @@ export default class clienteRepository {
         try {
             await client.connect()
 
-            let sql = `SELECT Trabajador.nombre, Trabajador.apellido, "Trabajador-Cliente".precio, "Trabajador-Cliente".necesidad, "Trabajador-Cliente".fecha_iniciado, "Trabajador-Cliente".estado
-                FROM Cliente
-                INNER JOIN "Trabajador-Cliente" 
-                ON "Trabajador-Cliente".id_cliente = Cliente.id
-                INNER JOIN Trabajador 
-                ON "Trabajador-Cliente".id_trabajador = Trabajador.id
-                WHERE Cliente.id = $1
-                AND "Trabajador-Cliente".estado IN ('EN PROCESO')`                   
+            const sql = `
+                SELECT
+                    u.nombre,
+                    u.apellido,
+                    ct.distancia,
+                    ct.horario,
+                    ct.categoria,
+                    ct.estado,
+                    ct."fecha_iniciado"
+                FROM "Cliente-Trabajador" ct
+                INNER JOIN "Trabajador" t ON ct."IdTrabajador" = t.id
+                INNER JOIN "Usuario" u ON t."IdPersona" = u.id
+                WHERE ct."IdCliente" = $1
+                AND ct.estado = 'EN PROCESO'
+            `
 
             result = await client.query(sql, [idCliente])
+
         } catch (err) {
-            console.error(err)
+            console.error('Error en mostrarTrabajosActivos:', err)
+            throw err
         } finally {
             await client.end()
         }
 
         return result?.rows ?? []
     }
+
+    /**
+     * Registra un cliente: inserta en Usuario y luego en Cliente.
+     * Recibe un objeto con todos los campos del modelo.
+     */
     registrarCliente = async (cliente) => {
-    const client = new Client(config);
+        const client = new Client(config)
 
-    try {
-        await client.connect();
+        try {
+            await client.connect()
 
-        const sqlUsuario = `
-            INSERT INTO Usuario
-            (
-                nombre,
-                apellido,
-                email,
-                direccion,
-                contrasena,
-                telefono,
-                fechaNac,
-                dni,
-                cuentaBancaria
-            )
-            VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
-            RETURNING id
-        `;
+            // 1. Insertar en Usuario
+            const sqlUsuario = `
+                INSERT INTO "Usuario"
+                (
+                    nombre,
+                    apellido,
+                    email,
+                    direccion,
+                    contrasena,
+                    telefono,
+                    "fechaNac",
+                    "DNI",
+                    "IdCuentaBancaria"
+                )
+                VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
+                RETURNING id
+            `
 
-        const resultUsuario = await client.query(
-            sqlUsuario,
-            [
+            const resultUsuario = await client.query(sqlUsuario, [
                 cliente.nombre,
                 cliente.apellido,
                 cliente.email,
@@ -122,57 +167,73 @@ export default class clienteRepository {
                 cliente.telefono,
                 cliente.fechaNac,
                 cliente.dni,
-                cliente.cuentaBancaria
-            ]
-        );
+                cliente.IdCuentaBancaria ?? null
+            ])
 
-        const idUsuario = resultUsuario.rows[0].id;
+            const idUsuario = resultUsuario.rows[0].id
 
-        const sqlCliente = `
-            INSERT INTO Cliente
-            (
-                idPersona,
-                preferencias,
-                estrellas
-            )
-            VALUES ($1,$2,$3)
-        `;
+            // 2. Insertar en Cliente
+            const sqlCliente = `
+                INSERT INTO "Cliente"
+                (
+                    "IdPersona",
+                    preferencias,
+                    estrellas
+                )
+                VALUES ($1,$2,$3)
+                RETURNING id
+            `
 
-        await client.query(
-            sqlCliente,
-            [
+            const resultCliente = await client.query(sqlCliente, [
                 idUsuario,
-                cliente.preferencias,
+                cliente.preferencias ?? null,
                 0
-            ]
-        );
+            ])
 
-        await client.end();
+            return {
+                success: true,
+                idUsuario,
+                idCliente: resultCliente.rows[0].id
+            }
 
-    } catch (err) {
-        console.error(err);
-    }
-}
-mostrarTodosLosClientes = async () => {
-    const client = new Client(config)
-    let result
-
-    try {
-        await client.connect()
-
-        const sql = `
-            SELECT *
-            FROM Cliente
-        `
-
-        result = await client.query(sql)
-
-    } catch (err) {
-        console.error(err)
-    } finally {
-        await client.end()
+        } catch (err) {
+            console.error('Error en registrarCliente:', err)
+            throw err
+        } finally {
+            await client.end()
+        }
     }
 
-    return result?.rows ?? []
-}
+    mostrarTodosLosClientes = async () => {
+        const client = new Client(config)
+        let result
+
+        try {
+            await client.connect()
+
+            const sql = `
+                SELECT
+                    c.id,
+                    u.nombre,
+                    u.apellido,
+                    u.email,
+                    u.direccion,
+                    u.telefono,
+                    c.preferencias,
+                    c.estrellas
+                FROM "Cliente" c
+                INNER JOIN "Usuario" u ON c."IdPersona" = u.id
+            `
+
+            result = await client.query(sql)
+
+        } catch (err) {
+            console.error('Error en mostrarTodosLosClientes:', err)
+            throw err
+        } finally {
+            await client.end()
+        }
+
+        return result?.rows ?? []
+    }
 }
