@@ -4,10 +4,6 @@ const { Client } = pkg
 
 export default class usuarioRepository {
 
-    /**
-     * Inserta en la tabla Usuario y devuelve el id generado.
-     * Se usa internamente desde clienteRepository y trabajadorRepository.
-     */
     registrarUsuario = async (usuario) => {
         const client = new Client(config)
         try {
@@ -15,21 +11,10 @@ export default class usuarioRepository {
 
             const sql = `
                 INSERT INTO "Usuario"
-                (
-                    nombre,
-                    apellido,
-                    email,
-                    direccion,
-                    contrasena,
-                    telefono,
-                    "fechaNac",
-                    "DNI",
-                    "IdCuentaBancaria"
-                )
+                (nombre, apellido, email, direccion, contrasena, telefono, "fechaNac", "DNI", "IdCuentaBancaria")
                 VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
                 RETURNING id
             `
-
             const values = [
                 usuario.nombre,
                 usuario.apellido,
@@ -57,16 +42,35 @@ export default class usuarioRepository {
         const client = new Client(config)
         try {
             await client.connect()
-
             const sql = `SELECT * FROM "Usuario" WHERE email = $1 LIMIT 1`
             const result = await client.query(sql, [email])
             return result.rows[0] ?? null
-
         } catch (err) {
             console.error('Error en buscarPorEmail:', err)
             throw err
         } finally {
             await client.end()
         }
+    }
+
+    // 👇 Nuevo: verificar DNI duplicado
+    buscarPorDni = async (dni) => {
+        const client = new Client(config)
+        try {
+            await client.connect()
+            const sql = `SELECT * FROM "Usuario" WHERE "DNI" = $1 LIMIT 1`
+            const result = await client.query(sql, [dni])
+            return result.rows[0] ?? null
+        } catch (err) {
+            console.error('Error en buscarPorDni:', err)
+            throw err
+        } finally {
+            await client.end()
+        }
+    }
+
+    existeEmail = async (email) => {
+        const usuario = await this.buscarPorEmail(email)
+        return usuario !== null
     }
 }

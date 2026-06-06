@@ -1,9 +1,10 @@
 import config from '../../configs/dbconfig.js'
+import usuarioRepository from '../general/usuario-repositories.js'
 import pkg from 'pg'
 const { Client } = pkg
 
 export default class clienteRepository {
-
+#usuarioRepo = new usuarioRepository() 
     /**
      * Busca trabajadores por nombre/apellido (texto libre).
      * Si se pasan ids, filtra solo entre esos ids (usado tras aplicar filtros).
@@ -154,75 +155,72 @@ export default class clienteRepository {
      * Registra un cliente: inserta en Usuario y luego en Cliente.
      * Recibe un objeto con todos los campos del modelo.
      */
-    registrarCliente = async (cliente) => {
-        const client = new Client(config)
+   registrarCliente = async (cliente) => {
+    const client = new Client(config)
 
-        try {
-            await client.connect()
+    try {
+        // Buscar usuario existente
+        const usuario = await this.#usuarioRepo.buscarPorEmail(
+            cliente.email
+        )
 
-            // 1. Insertar en Usuario
-            const sqlUsuario = `
-                INSERT INTO "Usuario"
-                (
-                    nombre,
-                    apellido,
-                    email,
-                    direccion,
-                    contrasena,
-                    telefono,
-                    "fechaNac",
-                    "DNI",
-                    "IdCuentaBancaria"
-                )
-                VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
-                RETURNING id
+        if (!usuario) {
+            throw new Error(
+                `No existe un usuario con el email ${cliente.email}`
+            )
+        }
+
+        await client.connect()
+
+        // Evitar registrar dos veces al mismo cliente
+        const existeCliente = await client.query(
             `
+            SELECT id
+            FROM "Cliente"
+            WHERE "IdPersona" = $1
+            `,
+            [usuario.id]
+        )
 
-            const resultUsuario = await client.query(sqlUsuario, [
-                cliente.nombre,
-                cliente.apellido,
-                cliente.email,
-                cliente.direccion,
-                cliente.contrasena,
-                cliente.telefono,
-                cliente.fechaNac,
-                cliente.dni,
-                cliente.IdCuentaBancaria ?? null
-            ])
+        if (existeCliente.rows.length > 0) {
+            throw new Error(
+                `El usuario ${cliente.email} ya es cliente`
+            )
+        }
 
-            const idUsuario = resultUsuario.rows[0].id
+        const sqlCliente = `
+            INSERT INTO "Cliente"
+            (
+                "IdPersona",
+                preferencias,
+                estrellas
+            )
+            VALUES ($1,$2,$3)
+            RETURNING id
+        `
 
-            // 2. Insertar en Cliente
-            const sqlCliente = `
-                INSERT INTO "Cliente"
-                (
-                    "IdPersona",
-                    preferencias,
-                    estrellas
-                )
-                VALUES ($1,$2,$3)
-                RETURNING id
-            `
-
-            const resultCliente = await client.query(sqlCliente, [
-                idUsuario,
+        const resultCliente = await client.query(
+            sqlCliente,
+            [
+                usuario.id,
                 cliente.preferencias ?? null,
                 0
-            ])
+            ]
+        )
 
-            return {
-                success: true,
-                idUsuario,
-                idCliente: resultCliente.rows[0].id
-            }
-
-        } catch (err) {
-            console.error('Error en registrarCliente:', err)
-            throw err
-        } finally {
-            await client.end()
+        return {
+            success: true,
+            idUsuario: usuario.id,
+            idCliente: resultCliente.rows[0].id
         }
+
+    } catch (err) {
+        console.error('Error en registrarCliente:', err)
+        throw err
+    } finally {
+        await client.end()
     }
+}
 
     mostrarTodosLosClientes = async () => {
         const client = new Client(config)

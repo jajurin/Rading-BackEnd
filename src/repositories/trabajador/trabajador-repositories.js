@@ -1,9 +1,10 @@
 import config from '../../configs/dbconfig.js'
+import usuarioRepository from '../general/usuario-repositories.js'
 import pkg from 'pg'
 const { Client } = pkg
  
 export default class trabajadorRepository {
- 
+ #usuarioRepo = new usuarioRepository()
     /**
      * Busca clientes por nombre/apellido (texto libre).
      * Si se pasan ids, filtra solo entre esos ids (usado tras aplicar filtros).
@@ -131,63 +132,59 @@ export default class trabajadorRepository {
      * Registra un trabajador: inserta en Usuario y luego en Trabajador.
      * Recibe un objeto con todos los campos del modelo.
      */
-    registrarTrabajador = async (trabajador) => {
-        const client = new Client(config)
- 
-        try {
-            await client.connect()
- 
-            // 1. Insertar en Usuario
-            const sqlUsuario = `
-                INSERT INTO "Usuario"
-                (
-                    nombre,
-                    apellido,
-                    email,
-                    direccion,
-                    contrasena,
-                    telefono,
-                    "fechaNac",
-                    "DNI",
-                    "IdCuentaBancaria"
-                )
-                VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
-                RETURNING id
+  registrarTrabajador = async (trabajador) => {
+    const client = new Client(config)
+
+    try {
+        // Buscar usuario existente
+        const usuario = await this.#usuarioRepo.buscarPorEmail(
+            trabajador.email
+        )
+
+        if (!usuario) {
+            throw new Error(
+                `No existe un usuario con el email ${trabajador.email}`
+            )
+        }
+
+        await client.connect()
+
+        // Evitar registrar dos veces al mismo trabajador
+        const existeTrabajador = await client.query(
             `
- 
-            const resultUsuario = await client.query(sqlUsuario, [
-                trabajador.nombre,
-                trabajador.apellido,
-                trabajador.email,
-                trabajador.direccion,
-                trabajador.contrasena,
-                trabajador.telefono,
-                trabajador.fechaNac,
-                trabajador.dni,
-                trabajador.IdCuentaBancaria ?? null
-            ])
- 
-            const idUsuario = resultUsuario.rows[0].id
- 
-            // 2. Insertar en Trabajador
-            const sqlTrabajador = `
-                INSERT INTO "Trabajador"
-                (
-                    "IdPersona",
-                    categoria,
-                    descripcion,
-                    "zonaTrabajo",
-                    "DispComienzo",
-                    "DispFinal",
-                    foto,
-                    estrellas
-                )
-                VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
-                RETURNING id
-            `
- 
-            const resultTrabajador = await client.query(sqlTrabajador, [
-                idUsuario,
+            SELECT id
+            FROM "Trabajador"
+            WHERE "IdPersona" = $1
+            `,
+            [usuario.id]
+        )
+
+        if (existeTrabajador.rows.length > 0) {
+            throw new Error(
+                `El usuario ${trabajador.email} ya es trabajador`
+            )
+        }
+
+        const sqlTrabajador = `
+            INSERT INTO "Trabajador"
+            (
+                "IdPersona",
+                categoria,
+                descripcion,
+                "zonaTrabajo",
+                "DispComienzo",
+                "DispFinal",
+                foto,
+                estrellas
+            )
+            VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
+            RETURNING id
+        `
+
+        const resultTrabajador = await client.query(
+            sqlTrabajador,
+            [
+                usuario.id,
                 trabajador.categoria,
                 trabajador.descripcion,
                 trabajador.zonaTrabajo,
@@ -195,21 +192,22 @@ export default class trabajadorRepository {
                 trabajador.DispFinal,
                 trabajador.foto ?? null,
                 0
-            ])
- 
-            return {
-                success: true,
-                idUsuario,
-                idTrabajador: resultTrabajador.rows[0].id
-            }
- 
-        } catch (err) {
-            console.error('Error en registrarTrabajador:', err)
-            throw err
-        } finally {
-            await client.end()
+            ]
+        )
+
+        return {
+            success: true,
+            idUsuario: usuario.id,
+            idTrabajador: resultTrabajador.rows[0].id
         }
+
+    } catch (err) {
+        console.error('Error en registrarTrabajador:', err)
+        throw err
+    } finally {
+        await client.end()
     }
+}
 
     mostrarTodosLosTrabajadores = async () => {
         const client = new Client(config)
